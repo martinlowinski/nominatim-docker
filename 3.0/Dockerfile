@@ -15,6 +15,7 @@ RUN apt-get -y update -qq && \
     apache2 php php-pgsql libapache2-mod-php php-pear php-db \
     php-intl git curl sudo \
     python-pip libboost-python-dev \
+    osmctools \
     osmosis && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
@@ -39,9 +40,17 @@ RUN pip install osmium
 COPY local.php /app/src/build/settings/local.php
 COPY nominatim.conf /etc/apache2/sites-enabled/000-default.conf
 
+# Create initial data
+RUN curl -L -f http://download.geofabrik.de/europe/germany-latest.osm.pbf --create-dirs -o /app/src/germany.osm.pbf
+RUN curl -L -f http://download.geofabrik.de/europe/austria-latest.osm.pbf --create-dirs -o /app/src/austria.osm.pbf
+RUN osmconvert /app/src/germany.osm.pbf --out-o5m | osmconvert - /app/src/austria.osm.pbf -o=/app/src/da.osm.pbf
+RUN rm /app/src/germany.osm.pbf /app/src/austria.osm.pbf
+RUN curl -L -f http://download.geofabrik.de/europe/switzerland-latest.osm.pbf --create-dirs -o /app/src/switzerland.osm.pbf
+RUN osmconvert /app/src/da.osm.pbf --out-o5m | osmconvert - /app/src/switzerland.osm.pbf -o=/app/src/dach.osm.pbf
+RUN rm /app/src/da.osm.pbf /app/src/switzerland.osm.pbf
+
 # Load initial data
-ARG PBF_DATA=http://download.geofabrik.de/europe/monaco-latest.osm.pbf
-RUN curl -L -f $PBF_DATA --create-dirs -o /app/src/data.osm.pbf
+RUN mv /app/src/dach.osm.pbf /app/src/data.osm.pbf
 RUN curl http://www.nominatim.org/data/country_grid.sql.gz > /app/src/data/country_osm_grid.sql.gz
 RUN service postgresql start && \
     sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='nominatim'" | grep -q 1 || sudo -u postgres createuser -s nominatim && \
