@@ -44,8 +44,10 @@ COPY nominatim.conf /etc/apache2/sites-enabled/000-default.conf
 RUN curl -q -L -f http://download.geofabrik.de/europe/germany-latest.osm.pbf --create-dirs -o /app/src/germany.osm.pbf
 RUN curl -q -L -f http://download.geofabrik.de/europe/austria-latest.osm.pbf -o /app/src/austria.osm.pbf
 RUN osmconvert /app/src/germany.osm.pbf --out-o5m | osmconvert - /app/src/austria.osm.pbf -o=/app/src/da.osm.pbf
+RUN rm /app/src/germany.osm.pbf /app/src/austria.osm.pbf
 RUN curl -q -L -f http://download.geofabrik.de/europe/switzerland-latest.osm.pbf -o /app/src/switzerland.osm.pbf
 RUN osmconvert /app/src/da.osm.pbf --out-o5m | osmconvert - /app/src/switzerland.osm.pbf -o=/app/src/dach.osm.pbf
+RUN rm /app/src/da.osm.pbf /app/src/switzerland.osm.pbf
 RUN mv /app/src/dach.osm.pbf /app/src/data.osm.pbf
 
 # Load initial data
